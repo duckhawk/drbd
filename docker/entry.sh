@@ -3,6 +3,8 @@
 SIGN_KEY=https://packages.linbit.com/package-signing-pubkey.asc
 PKGS=/pkgs
 HOSTRELEASE=/etc/host-release
+DKMS_STANDARD_KEY_PATH=/var/lib/shim-signed/mok
+KERNELVER=${KERNELVER:-$(uname -r)}
 
 die() {
 	>&2 echo
@@ -214,7 +216,7 @@ load_from_ram() {
 	if [ -d "$LB_SIGN" ]; then
 		# guess we could source the whole thing, but...
 		eval "$(grep CONFIG_MODULE_SIG_HASH= "/lib/modules/$(uname -r)/build/.config")"
-		find . -name "*.ko" -print0 | xargs -0 -n1 "/lib/modules/$(uname -r)/build/scripts/sign-file" "$CONFIG_MODULE_SIG_HASH" "${LB_SIGN}/signing_key.pem" "${LB_SIGN}/signing_key.x509" 
+		find . -name "*.ko" -print0 | xargs -0 -n1 "/lib/modules/$(uname -r)/build/scripts/sign-file" "$CONFIG_MODULE_SIG_HASH" "${LB_SIGN}/signing_key.pem" "${LB_SIGN}/signing_key.x509"
 	fi
 
 	insmod ./drbd.ko usermode_helper=disabled
@@ -323,6 +325,10 @@ if [[ $how_get == "$HOW_FROMSRC" ]] && [[ $how_load == "$HOW_INSTALL" ]]; then
 	cd "$pkgdir" || die "Could not cd to $pkgdir"
 	cd drbd-* || die "Could not cd to drbd src dir"
 	make install
+	if [[ `mokutil --sb-state | grep "SecureBoot enabled" | wc -l` == 1 ]] && [[ -f $DKMS_STANDARD_KEY_PATH/MOK.priv ]]; then
+	  /lib/modules/$KERNELVER/build/scripts/sign-file sha256 $DKMS_STANDARD_KEY_PATH/MOK.priv $DKMS_STANDARD_KEY_PATH/MOK.der drbd.ko
+	  /lib/modules/$KERNELVER/build/scripts/sign-file sha256 $DKMS_STANDARD_KEY_PATH/MOK.priv $DKMS_STANDARD_KEY_PATH/MOK.der drbd_transport_tcp.ko
+	  /lib/modules/$KERNELVER/build/scripts/sign-file sha256 $DKMS_STANDARD_KEY_PATH/MOK.priv $DKMS_STANDARD_KEY_PATH/MOK.der drbd_transport_rdma.ko
 	modprobe drbd usermode_helper=disabled
 	modprobe drbd_transport_tcp
 	modprobe drbd_transport_rdma 2>/dev/null || true
