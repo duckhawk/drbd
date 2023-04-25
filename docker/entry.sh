@@ -329,6 +329,7 @@ if [[ $how_get == "$HOW_FROMSRC" ]] && [[ $how_load == "$HOW_INSTALL" ]]; then
 	  /lib/modules/$KERNELVER/build/scripts/sign-file sha256 $DKMS_STANDARD_KEY_PATH/MOK.priv $DKMS_STANDARD_KEY_PATH/MOK.der drbd.ko
 	  /lib/modules/$KERNELVER/build/scripts/sign-file sha256 $DKMS_STANDARD_KEY_PATH/MOK.priv $DKMS_STANDARD_KEY_PATH/MOK.der drbd_transport_tcp.ko
 	  /lib/modules/$KERNELVER/build/scripts/sign-file sha256 $DKMS_STANDARD_KEY_PATH/MOK.priv $DKMS_STANDARD_KEY_PATH/MOK.der drbd_transport_rdma.ko
+	fi
 	modprobe drbd usermode_helper=disabled
 	modprobe drbd_transport_tcp
 	modprobe drbd_transport_rdma 2>/dev/null || true
